@@ -11,45 +11,48 @@ This document aims to investigate the various statistical properties for Exponen
 
 # Simulations
 
-The R Code below attempts to produce Exponential Distributions of 100, 1000, 10000 number of observations for 1000 number of simulations with $\lambda$ as 0.2 then for each simulation compute the mean and variance. 
+The R Code below attempts to produce Exponential Distributions of 40, 80 number of observations for 1000 number of simulations with $\lambda$ as 0.2 then for each simulation compute the mean and variance. 
 
 ```{r echo = TRUE}
-set.seed(10000);
-
-lambda <- 0.2;
-numberOfSimulations <- 1000;
-numberOfObservations <- c(100, 1000, 10000);
-
-statisticsByGroup <- data.frame(Group = c(), Mean = c(), Variance = c());
-for (x in numberOfObservations) {
-  meanAccumulator <- c();
-  varianceAccumulator <- c();
-  for (n in 1 : numberOfSimulations) {
-    expSampleDistribution <- rexp(x, lambda);
-    
-    meanAccumulator <- c(meanAccumulator, mean(expSampleDistribution));
-    varianceAccumulator <- c(varianceAccumulator, var(expSampleDistribution));
+run <- function(lambda, numberOfSimulations, numberOfObservations) {
+  statisticsByGroup <- data.frame(Group = c(), Mean = c(), Variance = c());
+  for (x in numberOfObservations) {
+    meanAccumulator <- c();
+    varianceAccumulator <- c();
+    for (n in 1 : numberOfSimulations) {
+      expSampleDistribution <- rexp(x, lambda);
+      meanAccumulator <- c(meanAccumulator, mean(expSampleDistribution));
+      varianceAccumulator <- c(varianceAccumulator, var(expSampleDistribution));
+    }
+    group <- rep(x, numberOfSimulations);
+    groupMeanVariance <- cbind(Group = group, Mean = meanAccumulator,
+                             Variance = varianceAccumulator);
+    statisticsByGroup <- rbind(statisticsByGroup, groupMeanVariance);
   }
-  group <- rep(x, numberOfSimulations);
-  groupMeanVariance <- cbind(Group = group, Mean = meanAccumulator, Variance = varianceAccumulator);
-  statisticsByGroup <- rbind(statisticsByGroup, groupMeanVariance);
+  statisticsByGroup$Group <- as.factor(statisticsByGroup$Group);
+  statisticsByGroup;
 }
+
+set.seed(10000);
+lambda <- 0.2; numberOfSimulations <- 1000; numberOfObservations <- c(40, 80);
+
+statisticsByGroup <- run(lambda, numberOfSimulations, numberOfObservations);
 ```
 
 # Theoretical Statistics
 
-Given that, mean is $\mu$ = 1 / $\lambda$, standard deviation is $\sigma$ = 1 / $\lambda$ and $\lambda$ = 0.2. The following attempts to compute the theoretical mean, standard deviation and variance.
+Given that, mean is $\mu$ = 1 / $\lambda$, standard deviation is $\sigma$ = 1 / $\lambda$, variance is $\sigma$^2  and $\lambda$ = 0.2. The following attempts to compute the theoretical mean, standard deviation and variance.
 
 ## Mean, Standard Deviation and Variance
 
-```{r echo = TRUE}
+```{r echo = FALSE}
 mu <- 1 / lambda;
 sd <- 1 / lambda;
 var <- sd ^ 2;
 c(mu, sd, var);
 ```
 
-# Statistics Inference
+# Statistical Inferences
 
 This section attempts to investigate the sample mean and variance against the theoretical ones.
 
@@ -59,19 +62,73 @@ library(ggplot2);
 
 ## Sample Mean Versus Theoretical Mean
 
-```{r}
+```{r echo = FALSE, fig.height=2}
 PLOT <- ggplot(data = statisticsByGroup, aes(x = Mean, fill = Group));
-PLOT <- PLOT + geom_histogram(alpha = 0.20, binwidth= 0.3, colour = "black");
+PLOT <- PLOT + geom_histogram(aes(y = ..density..), alpha = 0.20, binwidth= 0.3, colour = "black");
+PLOT <- PLOT + geom_density(size = 0.5, alpha = 0);
 PLOT <- PLOT + facet_grid(. ~ Group);
+PLOT <- PLOT + geom_vline(xintercept = mu, color = "red", size = 0.5);
+PLOT <- PLOT + labs(x = "Mean", y = "Density",
+                    title = "Density of Mean Grouped by Num. of Samples");
 print(PLOT);
 ```
+
+1. The average sample mean for the group of 40 and 80 number of observation,
+```{r}
+c(mean(statisticsByGroup[statisticsByGroup$Group == 40, "Mean"]),
+  mean(statisticsByGroup[statisticsByGroup$Group == 80, "Mean"]));
+```
+
+2. With more samples, the sample mean values are more likely to converges to the theoretical mean value, 5 represented by the red vertical line.
 
 ## Sample Variance Versus Theoretical Variance
 
-```{r}
-PLOT <- ggplot(data = statisticsByGroup, aes(x = Variance, fill = Group));
-PLOT <- PLOT + geom_histogram(alpha = 0.20, binwidth= 0.3, colour = "black");
-PLOT <- PLOT + facet_grid(. ~ Group);
-print(PLOT);
+```{r echo = FALSE, fig.height=2}
+PLOT2 <- ggplot(data = statisticsByGroup, aes(x = Variance, fill = Group));
+PLOT2 <- PLOT2 + geom_histogram(aes(y = ..density..), alpha = 0.20, binwidth= 0.3);
+PLOT2 <- PLOT2 + geom_density(size = 0.5, alpha = 0);
+PLOT2 <- PLOT2 + facet_grid(. ~ Group);
+PLOT2 <- PLOT2 + geom_vline(xintercept = var, color = "red", size = 0.5);
+print(PLOT2);
 ```
 
+1. The average sample variance for the group of 40 and 80 number of observation,
+```{r}
+c(mean(statisticsByGroup[statisticsByGroup$Group == 40, "Variance"]),
+  mean(statisticsByGroup[statisticsByGroup$Group == 80, "Variance"]));
+```
+
+2. With more samples, the sample variance values are more likely to converges to the theoretical variance value, 25 represented by the red vertical line.
+
+## Further Analysis
+
+### Sample Mean for 40 Observations for 5000 simulations
+
+```{r echo = FALSE, fig.height = 2}
+statisticsByGroupLarge <- run(lambda, 5000, 40);
+
+PLOT3 <- ggplot(data = statisticsByGroupLarge, aes(x = Mean));
+PLOT3 <- PLOT3 + geom_histogram(aes(y = ..density..), alpha = 0.20, binwidth= 0.3);
+PLOT3 <- PLOT3 + geom_density(size = 0.5, alpha = 0);
+PLOT3 <- PLOT3 + geom_vline(xintercept = mu, color = "red", size = 0.5);
+PLOT3 <- PLOT3 + labs(x = "Mean", y = "Density",
+  title = "Desity of Mean for 1000 Observations for 5000 Simulations");
+print(PLOT3);
+```
+
+### Exponential Distribution of 5000 Observations with $\lambda$ = 0.2
+```{r echo = FALSE, fig.height = 2}
+stats <- data.frame(Value = rexp(5000, lambda));
+
+PLOT4 <- ggplot(stats, aes(x = Value));
+PLOT4 <- PLOT4 + geom_histogram(alpha = 0.20, binwidth= 0.3);
+PLOT4 <- PLOT4 + geom_density(size = 0.5, alpha = 0);
+PLOT4 <- PLOT4 + labs(x = "Mean", y = "Count",
+  title = "Exponential Distribution for 5000 Observations");
+print(PLOT4);
+```
+
+# Summary
+1. As the sample size increases, the mean of samples converges to the theoretical mean and the sample variance converges to theoretical variance as described by the Law of Large Numbers.
+
+2. Exponential Distribution is clearly not normally distributed. However according to Central Limit Theorm, as the sample size increases, the averages of samples converges to normal distribution.
