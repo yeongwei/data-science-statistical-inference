@@ -1,0 +1,77 @@
+---
+title: "Investigate Various Exponential Distribution Statistics"
+author: "YeongWei"
+date: "Saturday, November 21, 2015"
+output: pdf_document
+---
+
+# Overview
+
+This document aims to investigate the various statistical properties for Exponential Distribution by comparing the sample and theoretical statistical properties.
+
+# Simulations
+
+The R Code below attempts to produce Exponential Distributions of 100, 1000, 10000 number of observations for 1000 number of simulations with $\lambda$ as 0.2 then for each simulation compute the mean and variance. 
+
+```{r echo = TRUE}
+set.seed(10000);
+
+lambda <- 0.2;
+numberOfSimulations <- 1000;
+numberOfObservations <- c(100, 1000, 10000);
+
+statisticsByGroup <- data.frame(Group = c(), Mean = c(), Variance = c());
+for (x in numberOfObservations) {
+  meanAccumulator <- c();
+  varianceAccumulator <- c();
+  for (n in 1 : numberOfSimulations) {
+    expSampleDistribution <- rexp(x, lambda);
+    
+    meanAccumulator <- c(meanAccumulator, mean(expSampleDistribution));
+    varianceAccumulator <- c(varianceAccumulator, var(expSampleDistribution));
+  }
+  group <- rep(x, numberOfSimulations);
+  groupMeanVariance <- cbind(Group = group, Mean = meanAccumulator, Variance = varianceAccumulator);
+  statisticsByGroup <- rbind(statisticsByGroup, groupMeanVariance);
+}
+```
+
+# Theoretical Statistics
+
+Given that, mean is $\mu$ = 1 / $\lambda$, standard deviation is $\sigma$ = 1 / $\lambda$ and $\lambda$ = 0.2. The following attempts to compute the theoretical mean, standard deviation and variance.
+
+## Mean, Standard Deviation and Variance
+
+```{r echo = TRUE}
+mu <- 1 / lambda;
+sd <- 1 / lambda;
+var <- sd ^ 2;
+c(mu, sd, var);
+```
+
+# Statistics Inference
+
+This section attempts to investigate the sample mean and variance against the theoretical ones.
+
+```{r echo = FALSE}
+library(ggplot2);
+```
+
+## Sample Mean Versus Theoretical Mean
+
+```{r}
+PLOT <- ggplot(data = statisticsByGroup, aes(x = Mean, fill = Group));
+PLOT <- PLOT + geom_histogram(alpha = 0.20, binwidth= 0.3, colour = "black");
+PLOT <- PLOT + facet_grid(. ~ Group);
+print(PLOT);
+```
+
+## Sample Variance Versus Theoretical Variance
+
+```{r}
+PLOT <- ggplot(data = statisticsByGroup, aes(x = Variance, fill = Group));
+PLOT <- PLOT + geom_histogram(alpha = 0.20, binwidth= 0.3, colour = "black");
+PLOT <- PLOT + facet_grid(. ~ Group);
+print(PLOT);
+```
+
