@@ -1,0 +1,92 @@
+---
+title: "Investigation on ToothGrowth Dataset"
+author: "YeongWei"
+date: "Sunday, November 22, 2015"
+output: pdf_document
+---
+
+# Overview
+
+This document aims to investigate the data associated to the ToothGrowth dataset.
+
+```{r echo = FALSE}
+library(ggplot2);
+data(ToothGrowth);
+```
+
+# Data Exploratory and Analysis
+```{r echo = FALSE}
+names(ToothGrowth) <- c("Length", "SupplementType", "Dosage");
+ToothGrowth$SupplementType <- as.character(ToothGrowth$SupplementType);
+ToothGrowth$Dosage <- as.character(ToothGrowth$Dosage);
+ToothGrowth$SupplementType[ToothGrowth$SupplementType == "OJ"] <- "Orange Juice";
+ToothGrowth$SupplementType[ToothGrowth$SupplementType == "VC"] <- "Vitamin C";
+```
+
+## Scatter Plots
+```{r echo = FALSE, fig.height = 2.8}
+PLOT <- ggplot(data = ToothGrowth, aes(x = Dosage, y = Length));
+PLOT <- PLOT + geom_point();
+PLOT <- PLOT + facet_wrap(~ SupplementType);
+print(PLOT);
+```
+
+## Box Plots
+```{r echo = FALSE, fig.height = 2.8}
+PLOT1 <- ggplot(data = ToothGrowth, aes(x = Dosage, y = Length));
+PLOT1 <- PLOT1 + geom_boxplot();
+PLOT1 <- PLOT1 + facet_wrap(~ SupplementType);
+print(PLOT1);
+```
+
+## Observations and Discussions
+1. As overview, the higher dosage of supplement, the higher the probability of getting higher length.
+2. Vitamin C has the potential of getting higer length than Orange Juice.
+3. Orange Juice has a tendency of logistic length growth and Vitamin C has a tendency of linear length growth.
+
+# Analysis on Tooth Growth by Supplement Type and Dosage
+
+## By Supplement Type
+
+### Equal Variance
+```{r echo = TRUE}
+stats <- t.test(ToothGrowth$Length[ToothGrowth$SupplementType == "Orange Juice"],
+       ToothGrowth$Length[ToothGrowth$SupplementType == "Vitamin C"],
+       paired = FALSE, var.equal = TRUE);
+c(stats$p.value, stats$conf.int, stats$estimate);
+```
+
+### Unequal Variance
+```{r echo = TRUE}
+stats <- t.test(ToothGrowth$Length[ToothGrowth$SupplementType == "Orange Juice"],
+       ToothGrowth$Length[ToothGrowth$SupplementType == "Vitamin C"],
+       paired = FALSE, var.equal = FALSE);
+c(stats$p.value, stats$conf.int, stats$estimate);
+```
+
+## By Dosage
+
+## Equal Variance
+```{r echo = TRUE}
+stats <- t.test(ToothGrowth$Length[ToothGrowth$Dosage == 0.5],
+       ToothGrowth$Length[ToothGrowth$Dosage == 2], paired = FALSE, var.equal = TRUE);
+c(stats$p.value, stats$conf.int, stats$estimate);
+```
+
+## Unequal Variance
+```{r echo = TRUE}
+stats <- t.test(ToothGrowth$Length[ToothGrowth$Dosage == 0.5],
+       ToothGrowth$Length[ToothGrowth$Dosage == 2], paired = FALSE, var.equal = FALSE);
+c(stats$p.value, stats$conf.int, stats$estimate);
+```
+
+# Summary
+1. All test consist of negative values for confidence interval implies a small sample size.
+2. There is minimal impact from variance equality assumption.
+3. Confidence Interval test by Supplement Type yields P-Value approximates to 0.06 and includes 0 in the Confidence Interval.
+4. Confidence Interval test by Dosage yields P-Value approximates to 0 (multiplication with e-14) and does not include 0 in the Confidence Interval.
+
+# Conclusion
+1. The Confidence Interval by Supplement Type includes 0 and P-Value large than 0.05 (standard cut-off point). Therefore the Supplement Type does not have apparent contibution to tooth length.
+2. The Confidence Interval by Dosage does not include 0 and P-Value close to 0. Therefore the amount Dosage has apparent contribution to tooth length. 
+3. Regardless of the Supplement Type, the amount of Dosage has a better impact on tooth growth.
